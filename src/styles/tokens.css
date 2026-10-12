@@ -1,0 +1,53 @@
+/* Tokens extraídos de "Start Home.html". Cambiar acá, no en cada componente. */
+:root {
+  --font-sans: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  --bg: #0E1318;
+  --bg-aside: #121920;
+  --surface: #151C23;
+  --surface-raised: #18212A;
+  --surface-muted: #1C252E;
+
+  --border: #26313B;
+  --border-strong: #2A3540;
+  --border-input: #2F3B47;
+  --divider: #222C35;
+  --divider-aside: #1F2830;
+
+  --text: #E6EBF0;
+  --text-2: #DCE3EA;
+  --text-3: #C3CCD5;
+  --text-4: #B7C2CD;
+  --text-muted: #9AA7B4;
+  --text-faint: #8C99A6;
+  --placeholder: #6F7C89;
+
+  --c-desarmado: #A9B5C1;
+  --c-armado: #5AA2FF;
+  --c-intervencion: #F5B041;
+  --c-alarma: #FF6B6B;
+  --b-armado: #2B4B73;
+  --b-intervencion: #6B5226;
+  --b-alarma: #7A2E33;
+  --soft-desarmado: rgba(169, 181, 193, 0.10);
+  --soft-armado: rgba(90, 162, 255, 0.14);
+  --soft-intervencion: rgba(245, 176, 65, 0.14);
+  --soft-alarma: rgba(255, 107, 107, 0.14);
+  --text-on-alarma: #FFD2D2;
+
+  --online: #3DD68C;
+  --lights-on: #F5D76E;
+  --off: #7C8996;
+  --led-off: #3A4652;
+  --log-muted: #5C6976;
+  --link: #7DB5FF;
+  --link-hover: #B5D4FF;
+  --on-primary: #0B1520;
+
+  --r-control: 10px;
+  --r-button: 12px;
+  --r-card: 16px;
+  --r-hero: 20px;
+  --r-pill: 999px;
+}

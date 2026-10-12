@@ -1,0 +1,12 @@
+.panel { min-height: 100vh; padding: 32px 24px 56px; }
+.panel__inner { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+
+.topbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; }
+.topbar__right { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+.conn {
+  display: flex; align-items: center; gap: 8px; padding: 8px 14px;
+  border: 1px solid var(--border-strong); border-radius: var(--r-pill);
+  font-family: var(--font-mono); font-size: 13px; color: var(--text-4);
+}
+.conn__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--online); }
+.user { font-size: 14px; color: var(--text-muted); }
