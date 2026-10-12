@@ -83,9 +83,11 @@ function triggerAlarm(ctx, cause, by) {
 }
 
 function arm(ctx, by, { skipExitDelay = false } = {}) {
+  const wasArmed = ctx.state.armed;
   const total = skipExitDelay ? 0 : ctx.state.config.exit_delay_s;
   ctx.state = { ...ctx.state, armed: true, exit_countdown: total > 0 ? { remaining_s: total, total_s: total } : null };
   enterMode(ctx, 'armado', by);
+  if (!wasArmed) ctx.events.push({ event: 'armed.changed', armed: true, by });
 }
 
 function reject(state, error) {
@@ -171,6 +173,8 @@ function onCommand(state, cmd) {
         enterMode(ctx, 'desarmado', 'web');
         ctx.state = { ...ctx.state, causes: [], siren: 'off', lights: false };
       }
+      // Se emite siempre que cambia `armed`: es la única señal cuando el modo no cambia (desarmar con humo).
+      if (state.armed) ctx.events.push({ event: 'armed.changed', armed: false, by: 'web' });
       return { state: ctx.state, events: ctx.events, ok: true };
     }
 
@@ -212,8 +216,10 @@ function onCommand(state, cmd) {
         ctx.state = { ...ctx.state, exit_countdown: null };
         ctx.events.push({ event: 'exit_delay.ended' });
       }
-      // Todos los sensores se activan "a la vez": se procesan en orden y se juntan los eventos.
-      let acc = { state: ctx.state, events: ctx.events, ok: true };
+      // Solo cuenta el paso a activo: los sensores que ya estaban activos se ponen en reposo (sin eventos, es
+      // una demo) para que todos generen su detección. Después se activan "a la vez", en orden.
+      const resting = Object.fromEntries(SENSOR_IDS.map((id) => [id, false]));
+      let acc = { state: { ...ctx.state, sensors: resting }, events: ctx.events, ok: true };
       for (const sensor of SENSOR_IDS) {
         const r = onSensor(acc.state, { sensor, active: true });
         acc = { state: r.state, events: acc.events.concat(r.events), ok: true };

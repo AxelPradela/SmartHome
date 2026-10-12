@@ -7,6 +7,15 @@ Estado: **borrador para acordar con el equipo.** La implementación de referenci
 > Los ejemplos JSON con `"v": 1` de este archivo se validan automáticamente en `tests/contract.test.js`.
 > Si cambiás el contrato, actualizá el código, este documento y los tests juntos, y avisá al equipo.
 
+## 📣 Cambios para avisar al equipo
+
+Agregados después del primer borrador. Hardware y n8n tienen que revisarlos:
+
+| Cambio | Afecta a | Qué hay que hacer |
+|---|---|---|
+| Evento **`armed.changed`** (§4) | micro, n8n | El micro lo publica cada vez que el sistema se arma o se desarma, después del `mode.changed`. Es la única señal de que se desarmó con humo presente (el modo sigue en `alarma`). |
+| Evento **`notification.sent`** y tópico **`smarthome/{deviceId}/notification`** (§4) | n8n, broker | n8n lo publica después de intentar mandar el Telegram de una alarma, con canal y resultado. La web solo dice «Notificación enviada» cuando lo recibe. Hay que darle a n8n permiso de escritura en ese tópico (§9). |
+
 ## 1. Transporte
 
 Pendiente de confirmar según el microcontrolador y su conectividad. La propuesta es un **broker MQTT**
@@ -20,6 +29,7 @@ mismos mensajes y n8n los republica en el broker: el formato no cambia.
 | `smarthome/{deviceId}/cmd` | web | micro | no | 1 | Comando (§5) |
 | `smarthome/{deviceId}/ack` | micro | web | no | 1 | Respuesta a un comando (§6) |
 | `smarthome/{deviceId}/online` | micro (LWT) | web, n8n | **sí** | 1 | `true` / `false` (texto plano, sin sobre) |
+| `smarthome/{deviceId}/notification` 📣 | **n8n** | web | no | 1 | Evento `notification.sent` (§4) |
 
 - **Retenido**: el broker guarda el último `state` y `online`, así la web ve el estado apenas se conecta.
 - **LWT** (*Last Will and Testament*): el micro registra `online=false` al conectarse y publica `online=true`;
@@ -177,11 +187,51 @@ Hechos puntuales. Alimentan el historial de la web y las notificaciones de n8n (
 | `siren.silenced` | `by` | Se silencia la sirena (comando o al desarmar con humo presente). |
 | `config.changed` | `entry_delay_s` y/o `exit_delay_s` | Cambia la configuración (solo los campos que cambiaron). |
 | `exit_delay.ended` | — | Terminó el tiempo de salida ⚠️: desde ahora el sistema vigila. |
+| `armed.changed` 📣 | `armed`, `by` | El sistema se armó o se desarmó. Va después del `mode.changed` correspondiente. Es la única señal cuando el modo no cambia: desarmar con humo presente deja el modo en `alarma`. |
+| `notification.sent` 📣 | `channel`, `ref`, `ok`, `error`?, `simulated`? | **Lo publica n8n** en `smarthome/{deviceId}/notification`, no el micro. Ver abajo. |
 
 `by` indica el origen: `web`, `device` (botón físico, si existe), `timeout` (fin de la cuenta regresiva),
 `sensor:<id>` o `demo` (lo armó `simulate_all`).
 
 **n8n notifica por Telegram** al menos en `alarm.triggered`, y en `online` → `false`.
+
+### `notification.sent` 📣
+
+Después de intentar mandar la notificación de una alarma, n8n publica este evento en
+`smarthome/{deviceId}/notification`, con el mismo sobre (`deviceId` = el del dispositivo de la alarma).
+
+| Campo | Valores | Notas |
+|---|---|---|
+| `channel` | `telegram` | Canal usado. Se pueden sumar otros más adelante. |
+| `ref` | texto | `id` del mensaje `alarm.triggered` que se notificó. La web lo usa para saber a qué alarma corresponde. |
+| `ok` | booleano | Si el envío funcionó. |
+| `error` | texto | Obligatorio si `ok` es `false` (p. ej. el mensaje de error de Telegram). |
+| `simulated` | booleano, opcional | `true` cuando lo genera el mock de la web: no se mandó nada de verdad. n8n no lo envía. |
+
+La web **solo** muestra «Notificación enviada» al recibir este evento con `ok: true` para la alarma en curso.
+Mientras no llegue, el aviso dice «Alarma activada». Con el mock dice «Notificación simulada (demo)».
+
+```json
+{
+  "v": 1,
+  "id": "7a8b9c0d-1e2f-4a3b-8c4d-5e6f7a8b9c0d",
+  "type": "event",
+  "ts": "2026-10-12T19:04:13Z",
+  "deviceId": "casa-01",
+  "payload": { "event": "notification.sent", "channel": "telegram", "ref": "a3e1c7d2-9b8f-4a6e-8c5d-1f2e3d4c5b60", "ok": true }
+}
+```
+
+```json
+{
+  "v": 1,
+  "id": "8b9c0d1e-2f3a-4b4c-9d5e-6f7a8b9c0d1e",
+  "type": "event",
+  "ts": "2026-10-12T19:04:14Z",
+  "deviceId": "casa-01",
+  "payload": { "event": "notification.sent", "channel": "telegram", "ref": "a3e1c7d2-9b8f-4a6e-8c5d-1f2e3d4c5b60", "ok": false, "error": "Forbidden: bot was blocked by the user" }
+}
+```
 
 ```json
 {
@@ -205,6 +255,19 @@ Hechos puntuales. Alimentan el historial de la web y las notificaciones de n8n (
 }
 ```
 
+Desarmar con humo presente (el modo sigue en `alarma`, por eso no hay `mode.changed`):
+
+```json
+{
+  "v": 1,
+  "id": "5d6e7f80-9a1b-4c2d-8e3f-4a5b6c7d8e9f",
+  "type": "event",
+  "ts": "2026-10-12T19:04:30Z",
+  "deviceId": "casa-01",
+  "payload": { "event": "armed.changed", "armed": false, "by": "web" }
+}
+```
+
 ## 5. Comandos (`type: "cmd"`)
 
 Los envía la web; los ejecuta el micro y responde con un `ack` (§6) y, si algo cambió, con un nuevo `state`.
@@ -217,7 +280,7 @@ Los envía la web; los ejecuta el micro y responde con un `ack` (§6) y, si algo
 | `get_state` | — | siempre | el micro republica `state` |
 | `set_config` | `entry_delay_s` (5–60) y/o `exit_delay_s` (0–120) | siempre | aplica a la próxima cuenta regresiva |
 | `simulate` ⚠️ | `sensor`, `active` | siempre | **solo demo**: como si ese sensor cambiara |
-| `simulate_all` ⚠️ | — | siempre | **solo demo**: si está desarmado primero arma (sin tiempo de salida, `by: "demo"`); si está en tiempo de salida lo termina; después activa los 5 sensores a la vez. Así la demo siempre muestra intrusión y humo juntos. |
+| `simulate_all` ⚠️ | — | siempre | **solo demo**: si está desarmado primero arma (sin tiempo de salida, `by: "demo"`); si está en tiempo de salida lo termina; después activa los 5 sensores a la vez (los que ya estaban activos pasan antes a reposo, sin eventos, para que todos cuenten como detección). Así la demo siempre muestra intrusión y humo juntos. |
 
 > ⚠️ **`simulate` y `simulate_all` son solo demo.** Los atiende el transporte mock de la web o un modo demo
 > del micro. En producción el micro debe rechazarlos con `error: "demo_disabled"`.
@@ -304,7 +367,8 @@ Especificación ejecutable: `tests/alarm-machine.test.js`.
 8. En `alarma` estando armado, una nueva detección suma `intrusion` de inmediato.
 9. Una causa nueva vuelve a encender la sirena aunque estuviera `muted`.
 10. Silenciar no sale de `alarma`; para salir hay que desarmar.
-11. Desarmar con humo presente → `alarma`, `causes: ["smoke"]`, sirena `muted`, luces encendidas.
+11. Desarmar con humo presente → `alarma`, `causes: ["smoke"]`, sirena `muted`, luces encendidas. Se emite
+    `armed.changed` (`armed: false`) aunque el modo no cambie.
 12. Desarmar no cambia el estado de los sensores (lo informa el hardware).
 13. Al armar arranca el tiempo de salida (`exit_countdown = exit_delay_s`, si es mayor a 0). Mientras dura, las
     aperturas y el movimiento solo generan `sensor.changed`; el humo dispara igual. Al llegar a 0 se emite
@@ -338,9 +402,11 @@ Usuario fijo, validado por n8n. En el mock se usan credenciales de prueba de `.e
   | `smarthome/{deviceId}/online` | solo lectura |
   | `smarthome/{deviceId}/ack` | solo lectura |
   | `smarthome/{deviceId}/cmd` | **solo escritura** |
+  | `smarthome/{deviceId}/notification` 📣 | solo lectura |
 
-  El micro tiene el permiso inverso (escribe `state`/`event`/`online`/`ack`, lee `cmd`) y n8n solo lectura
-  (salvo que republique mensajes del micro por HTTP). En Mosquitto se configura con un archivo `acl`; en
+  El micro tiene el permiso inverso (escribe `state`/`event`/`online`/`ack`, lee `cmd`). n8n lee todo y
+  **escribe solo `notification`** 📣 (y los tópicos del micro si los republica porque el micro habla HTTP).
+  `notification` va separado de `event` para que n8n no necesite permiso de escritura en los tópicos del micro. En Mosquitto se configura con un archivo `acl`; en
   HiveMQ Cloud o EMQX, desde su panel.
 - **Las credenciales en `.env` no son seguridad real.** Toda variable `VITE_*` termina dentro del JavaScript
   público y cualquiera que abra la web puede leerla. Sirven para que solo la web conocida se conecte y para

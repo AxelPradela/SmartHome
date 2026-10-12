@@ -77,6 +77,13 @@ Respetar estética, colores y tipografía. Tokens extraídos del diseño:
 - Tiempo de salida: al armar, `exit_countdown` (30 s por defecto, `exit_delay_s` 0–120) durante el cual aperturas y
   movimiento no disparan intervención; la UI lo muestra como «Armando…». **A confirmar con hardware**, igual que
   armar con una zona abierta (hoy permitido: solo cuenta el flanco a activo).
+- Notificaciones: n8n publica `notification.sent` (tópico propio `smarthome/{deviceId}/notification`, con `ref` al
+  `alarm.triggered`). La web dice «Notificación enviada» **solo** al recibirlo; antes dice «Alarma activada». El mock
+  la publica con `simulated: true` y la UI la muestra como «Notificación simulada (demo)». Nunca afirmar en la UI que
+  se avisó al usuario sin ese evento.
+- «Reiniciar demo» (solo con el mock): confirmación dentro de la página, borra el estado guardado y el historial en
+  todas las pestañas. Es interno del mock, no un comando del contrato.
+- Cambios de contrato pendientes de avisar al equipo: sección «📣» al principio de `docs/contrato.md`.
 - Nombre del producto: **Smart Home** (tópicos `smarthome/...`). El archivo de diseño conserva su nombre `Start Home.html`.
 - La web se conecta al broker con un usuario de permisos limitados (lee `state`/`event`/`online`/`ack`, escribe solo `cmd`).
   Las credenciales en `.env` (`VITE_*`) terminan en el JS público: no son seguridad real.
@@ -101,6 +108,12 @@ Al terminar cada paso: correr los tests, mostrar el resumen de cambios y esperar
   Implementación en `src/core/contract.js`; comportamiento en `src/core/alarm-machine.js` (pura: `step(state, input)`
   → `{state, events, ok, error}`). `tests/contract.test.js` valida los ejemplos JSON del documento, así que
   código, doc y tests se cambian juntos.
+- Panel: `transport/` (mock = `mock-device.js` + coordinación multipestaña con Web Locks/BroadcastChannel y
+  estado en localStorage) → `core/device-client.js` (valida mensajes, comandos con ack y timeout de 3 s) →
+  `panel/controller.js` (store + historial) → `panel/view-model.js` (función pura, todo lo que se muestra) →
+  `panel/render.js` (solo DOM). La lógica nueva va en view-model/controller, que tienen tests; render.js no.
+- Las cuentas regresivas se interpolan en la UI con `receivedAt`; el mock cuenta los ticks por reloj porque los
+  navegadores espacian los timers de pestañas en segundo plano.
 
 ## Reglas de trabajo
 - No escribir código de la app sin plan aprobado por el usuario.

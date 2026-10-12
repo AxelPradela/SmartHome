@@ -33,7 +33,7 @@ describe('sobre', () => {
   it('tópicos por dispositivo', () => {
     expect(topics('casa-01')).toEqual({
       state: 'smarthome/casa-01/state', event: 'smarthome/casa-01/event', cmd: 'smarthome/casa-01/cmd',
-      ack: 'smarthome/casa-01/ack', online: 'smarthome/casa-01/online',
+      ack: 'smarthome/casa-01/ack', online: 'smarthome/casa-01/online', notification: 'smarthome/casa-01/notification',
     });
   });
 });
@@ -110,6 +110,17 @@ describe('la máquina de estados siempre produce mensajes válidos', () => {
       expect(validateMessage(makeState(toSnapshot(state), opts))).toEqual([]);
       for (const e of r.events) expect(validateMessage(makeEvent(e, opts)), JSON.stringify(e)).toEqual([]);
     }
+  });
+
+  it('notification.sent: canal, ref, resultado y simulated opcional', () => {
+    const ok = { event: 'notification.sent', channel: 'telegram', ref: 'a1', ok: true };
+    expect(validateEvent(ok)).toEqual([]);
+    expect(validateEvent({ ...ok, simulated: true })).toEqual([]);
+    expect(validateEvent({ ...ok, ok: false, error: 'bot bloqueado' })).toEqual([]);
+    expect(validateEvent({ ...ok, ok: false })).toHaveLength(1); // falta error
+    expect(validateEvent({ ...ok, channel: 'sms' })).toHaveLength(1);
+    expect(validateEvent({ ...ok, ref: undefined })).toHaveLength(1);
+    expect(validateEvent({ ...ok, simulated: 'sí' })).toHaveLength(1);
   });
 
   it('valida eventos desconocidos o incompletos', () => {

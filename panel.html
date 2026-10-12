@@ -11,6 +11,7 @@
 <body>
 <div class="panel">
   <div class="panel__inner">
+
     <header class="topbar">
       <div class="brand">
         <div class="brand__logo">
@@ -22,16 +23,112 @@
         </div>
       </div>
       <div class="topbar__right">
+        <div class="conn" role="status">
+          <span id="conn-dot" class="conn__dot"></span>
+          <span id="conn-text">Conectando…</span>
+        </div>
         <span id="user" class="user"></span>
         <button id="logout" type="button" class="btn btn--ghost">Cerrar sesión</button>
       </div>
     </header>
 
-    <main id="panel-root">
-      <!-- Paso 3: estado, franja de estados, sensores, respuesta del dispositivo e historial. -->
-    </main>
+    <div id="alarm-alert" class="alert" role="alert" hidden>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--c-alarma)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg>
+      <div><strong id="alarm-alert-title">Alarma activada:</strong> <span id="alarm-alert-text"></span><span id="alarm-alert-muted" hidden> La sirena está silenciada.</span></div>
+    </div>
+
+    <section id="hero" class="hero" aria-label="Estado del sistema">
+      <div class="hero__main">
+        <div id="hero-ring" class="hero__ring">
+          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z"/></svg>
+        </div>
+        <div class="hero__text" aria-live="polite">
+          <div class="eyebrow">Estado del sistema</div>
+          <div id="hero-label" class="hero__label">Conectando…</div>
+          <div id="hero-desc" class="hero__desc">Esperando el estado del dispositivo.</div>
+        </div>
+      </div>
+      <div class="hero__actions">
+        <div id="countdown" class="hero__countdown mono" hidden></div>
+        <button id="btn-arm" type="button" class="btn btn--primary" hidden>Armar sistema</button>
+        <button id="btn-disarm" type="button" class="btn btn--light" hidden>Desarmar</button>
+        <button id="btn-silence" type="button" class="btn btn--danger-ghost" hidden>Silenciar sirena</button>
+        <div id="cmd-error" class="cmd-error" role="alert" hidden></div>
+      </div>
+    </section>
+
+    <section class="modes" aria-label="Estados posibles">
+      <ul id="modes" class="modes__list"></ul>
+    </section>
+
+    <section class="sensors" aria-labelledby="sens-title">
+      <div class="section-head">
+        <h2 id="sens-title" class="section-title">Sensores</h2>
+        <div id="demo-controls" class="section-head__right" hidden>
+          <div class="section-hint">Tocá «Simular» para ver cómo responde el sistema</div>
+          <button id="btn-simulate-all" type="button" class="btn btn--sim-all">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--c-alarma)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg>
+            Simular todo a la vez
+          </button>
+          <button id="btn-reset-demo" type="button" class="btn btn--ghost" aria-controls="reset-confirm" aria-expanded="false" hidden>Reiniciar demo</button>
+        </div>
+      </div>
+      <div id="reset-confirm" class="confirm" role="group" aria-labelledby="reset-confirm-text" hidden>
+        <p id="reset-confirm-text" class="confirm__text">¿Reiniciar la demo? Se borra el estado guardado y el historial, y todo vuelve a desarmado con los sensores en reposo.</p>
+        <div class="confirm__actions">
+          <button id="btn-reset-cancel" type="button" class="btn btn--ghost">Cancelar</button>
+          <button id="btn-reset-ok" type="button" class="btn btn--danger-ghost">Sí, reiniciar</button>
+        </div>
+      </div>
+      <div id="sensors" class="sensors__grid"></div>
+    </section>
+
+    <div class="bottom">
+      <section class="card card--device" aria-labelledby="resp-title">
+        <h2 id="resp-title" class="section-title card__title">Respuesta del dispositivo</h2>
+        <div class="row">
+          <div class="row__label"><span id="led" class="led"></span><span>LED</span></div>
+          <span id="led-text" class="row__value mono"></span>
+        </div>
+        <div class="row">
+          <div id="siren-icon" class="row__label">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5L6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+            <span>Sirena</span>
+          </div>
+          <span id="siren-text" class="row__value mono"></span>
+        </div>
+        <div class="row">
+          <div id="lights-icon" class="row__label">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg>
+            <span>Luces de la casa</span>
+          </div>
+          <span id="lights-text" class="row__value mono"></span>
+        </div>
+      </section>
+
+      <section class="card card--log" aria-labelledby="log-title">
+        <h2 id="log-title" class="section-title card__title">Historial de eventos</h2>
+        <ol id="log" class="log" aria-live="polite"></ol>
+      </section>
+    </div>
+
   </div>
 </div>
+
+<template id="tpl-sensor">
+  <div class="sensor">
+    <div class="sensor__top">
+      <div class="sensor__icon"></div>
+      <span class="sensor__badge mono"></span>
+    </div>
+    <div>
+      <div class="sensor__name"></div>
+      <div class="sensor__type"></div>
+    </div>
+    <button type="button" class="btn btn--ghost sensor__action"></button>
+  </div>
+</template>
+
 <script type="module" src="./src/panel/panel.js"></script>
 </body>
 </html>

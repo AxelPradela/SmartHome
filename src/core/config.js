@@ -14,6 +14,8 @@ export function readConfig(env = {}) {
     mockPassword: env.VITE_MOCK_PASSWORD || 'smarthome',
     n8nUrl: (env.VITE_N8N_URL || '').replace(/\/+$/, ''),
     deviceId: env.VITE_DEVICE_ID || 'casa-01',
+    // Controles de simulación (comandos solo demo). Siempre con el mock; con hardware solo si se pide.
+    demo: pick(env.VITE_TRANSPORT, TRANSPORTS, 'mock') === 'mock' || env.VITE_DEMO === 'true',
   };
 }
 

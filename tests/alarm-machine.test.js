@@ -53,7 +53,10 @@ describe('armado → intervención → alarma', () => {
   it('armar pone LED azul fijo y sirena silenciada', () => {
     const { state, events } = run([cmd('arm')]);
     expect(toSnapshot(state)).toMatchObject({ mode: 'armado', armed: true, outputs: { led: { color: 'blue', pattern: 'solid' }, siren: 'off', lights: false } });
-    expect(events).toEqual([{ event: 'mode.changed', from: 'desarmado', to: 'armado', by: 'web' }]);
+    expect(events).toEqual([
+      { event: 'mode.changed', from: 'desarmado', to: 'armado', by: 'web' },
+      { event: 'armed.changed', armed: true, by: 'web' },
+    ]);
   });
 
   it('una detección armado inicia la intervención con cuenta regresiva y pitido', () => {
@@ -146,6 +149,18 @@ describe('desarmar', () => {
     expect(events).toContainEqual({ event: 'siren.silenced', by: 'web' });
   });
 
+  it('armed.changed avisa que se desarmó aunque el modo siga en alarma', () => {
+    const before = run([cmd('arm'), sensor('humo')]).state;
+    const r = step(before, cmd('disarm'));
+    expect(r.events).toContainEqual({ event: 'armed.changed', armed: false, by: 'web' });
+    expect(r.events.some((e) => e.event === 'mode.changed')).toBe(false);
+  });
+
+  it('desarmar algo que no estaba armado (humo estando desarmado) no emite armed.changed', () => {
+    const r = step(run([sensor('humo')]).state, cmd('disarm'));
+    expect(r.events.some((e) => e.event === 'armed.changed')).toBe(false);
+  });
+
   it('cuando el humo se va, desarmar de nuevo vuelve a desarmado', () => {
     const { state } = run([sensor('humo'), cmd('disarm'), sensor('humo', false), cmd('disarm')]);
     expect(toSnapshot(state)).toMatchObject({ mode: 'desarmado', causes: [], outputs: { siren: 'off', lights: false } });
@@ -186,6 +201,11 @@ describe('comandos solo demo', () => {
     const { state, events } = run([cmd('simulate_all')], createInitialState()); // con tiempo de salida de 30 s
     expect(toSnapshot(state)).toMatchObject({ mode: 'alarma', armed: true, causes: ['intrusion', 'smoke'], exit_countdown: null });
     expect(events[0]).toEqual({ event: 'mode.changed', from: 'desarmado', to: 'armado', by: 'demo' });
+  });
+
+  it('simulate_all con sensores que ya estaban activos igual muestra intrusión y humo', () => {
+    const { state } = run([sensor('puerta'), sensor('ventanaLiving'), sensor('movimiento'), cmd('simulate_all')]);
+    expect(state.causes).toEqual(['intrusion', 'smoke']);
   });
 
   it('simulate_all durante el tiempo de salida lo termina y muestra intrusión y humo', () => {

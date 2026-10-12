@@ -11,7 +11,9 @@ export const CAUSES = ['intrusion', 'smoke'];
 export const SIREN_STATES = ['off', 'warning', 'on', 'muted'];
 export const LED_COLORS = ['off', 'blue', 'amber', 'red'];
 export const LED_PATTERNS = ['solid', 'blink'];
-export const EVENTS = ['sensor.changed', 'mode.changed', 'alarm.triggered', 'siren.silenced', 'config.changed', 'exit_delay.ended'];
+export const EVENTS = ['sensor.changed', 'mode.changed', 'alarm.triggered', 'siren.silenced', 'config.changed', 'exit_delay.ended', 'armed.changed', 'notification.sent'];
+/** Canales de notificación que puede usar n8n. */
+export const NOTIFICATION_CHANNELS = ['telegram'];
 export const COMMANDS = ['arm', 'disarm', 'silence_siren', 'get_state', 'set_config'];
 /** Solo demo: los atiende el transporte mock o un modo demo del micro. En producción el micro los rechaza. */
 export const DEMO_COMMANDS = ['simulate', 'simulate_all'];
@@ -19,7 +21,14 @@ export const ACK_ERRORS = ['invalid_transition', 'invalid_payload', 'unknown_com
 
 export function topics(deviceId) {
   const base = `smarthome/${deviceId}`;
-  return { state: `${base}/state`, event: `${base}/event`, cmd: `${base}/cmd`, ack: `${base}/ack`, online: `${base}/online` };
+  return {
+    state: `${base}/state`,
+    event: `${base}/event`,
+    cmd: `${base}/cmd`,
+    ack: `${base}/ack`,
+    online: `${base}/online`,
+    notification: `${base}/notification`, // lo publica n8n, no el micro
+  };
 }
 
 function newId() {
@@ -140,6 +149,17 @@ export function validateEvent(p) {
       break;
     }
     case 'exit_delay.ended':
+      break;
+    case 'armed.changed':
+      if (!isBool(p.armed)) errors.push('armed: booleano');
+      if (!isStr(p.by)) errors.push('by: texto');
+      break;
+    case 'notification.sent':
+      if (!NOTIFICATION_CHANNELS.includes(p.channel)) errors.push(`channel: uno de ${NOTIFICATION_CHANNELS.join('|')}`);
+      if (!isStr(p.ref)) errors.push('ref: id del alarm.triggered que se notificó');
+      if (!isBool(p.ok)) errors.push('ok: booleano');
+      if (p.ok === false && !isStr(p.error)) errors.push('error: texto cuando ok es false');
+      if (p.simulated !== undefined && !isBool(p.simulated)) errors.push('simulated: booleano');
       break;
     default:
       errors.push(`event: evento desconocido "${p.event}"`);
