@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { createAuthApi, isValidEmail } from '../src/auth/auth-api.js';
 import { readConfig } from '../src/core/config.js';
 
-const mockConfig = readConfig({ VITE_MOCK_EMAIL: 'demo@starthome.local', VITE_MOCK_PASSWORD: 'secreto' });
+const mockConfig = readConfig({ VITE_MOCK_EMAIL: 'demo@smarthome.local', VITE_MOCK_PASSWORD: 'secreto' });
 
 describe('isValidEmail', () => {
   it.each([['a@b.co', true], ['  a@b.co ', true], ['a@b', false], ['', false], ['a b@c.d', false]])('%s → %s', (e, ok) => {
@@ -14,18 +14,18 @@ describe('auth mock', () => {
   const api = createAuthApi(mockConfig, { latencyMs: 0 });
 
   it('acepta las credenciales de prueba (email sin distinguir mayúsculas)', async () => {
-    const r = await api.login(' Demo@StartHome.local ', 'secreto');
+    const r = await api.login(' Demo@SmartHome.local ', 'secreto');
     expect(r.token).toMatch(/^mock-/);
-    expect(r.user.email).toBe('demo@starthome.local');
+    expect(r.user.email).toBe('demo@smarthome.local');
   });
 
   it('rechaza contraseña incorrecta', async () => {
-    await expect(api.login('demo@starthome.local', 'otra')).rejects.toMatchObject({ code: 'invalid_credentials' });
+    await expect(api.login('demo@smarthome.local', 'otra')).rejects.toMatchObject({ code: 'invalid_credentials' });
   });
 
   it('valida la entrada antes de llamar al backend', async () => {
     await expect(api.login('no-es-mail', 'x')).rejects.toMatchObject({ code: 'invalid_input' });
-    await expect(api.login('demo@starthome.local', '')).rejects.toMatchObject({ code: 'invalid_input' });
+    await expect(api.login('demo@smarthome.local', '')).rejects.toMatchObject({ code: 'invalid_input' });
     await expect(api.recover('mal')).rejects.toMatchObject({ code: 'invalid_input' });
   });
 

@@ -1,4 +1,4 @@
-const KEY = 'starthome.session';
+const KEY = 'smarthome.session';
 export const REMEMBER_DAYS = 30;
 
 function safe(fn, fallback) {

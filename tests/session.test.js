@@ -54,8 +54,8 @@ describe('session store', () => {
 
   it('ignora datos corruptos o incompletos', () => {
     const local = memoryStorage(), session = memoryStorage();
-    session.setItem('starthome.session', '{no es json');
-    local.setItem('starthome.session', JSON.stringify({ token: 1 }));
+    session.setItem('smarthome.session', '{no es json');
+    local.setItem('smarthome.session', JSON.stringify({ token: 1 }));
     expect(createSessionStore({ local, session }).load()).toBeNull();
   });
 

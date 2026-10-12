@@ -10,8 +10,8 @@ export function readConfig(env = {}) {
   return {
     transport: pick(env.VITE_TRANSPORT, TRANSPORTS, 'mock'),
     auth: pick(env.VITE_AUTH, AUTHS, 'mock'),
-    mockEmail: env.VITE_MOCK_EMAIL || 'demo@starthome.local',
-    mockPassword: env.VITE_MOCK_PASSWORD || 'starthome',
+    mockEmail: env.VITE_MOCK_EMAIL || 'demo@smarthome.local',
+    mockPassword: env.VITE_MOCK_PASSWORD || 'smarthome',
     n8nUrl: (env.VITE_N8N_URL || '').replace(/\/+$/, ''),
     deviceId: env.VITE_DEVICE_ID || 'casa-01',
   };
