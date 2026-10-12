@@ -1,4 +1,4 @@
-# Start Home — Web
+# Smart Home — Web
 
 Sistema inteligente de automatización y seguridad para el hogar. Proyecto en equipo de la materia
 **Programación en Tiempo Real**. Objetivo: monitorear el hogar de forma autónoma y notificar al
@@ -73,6 +73,11 @@ Respetar estética, colores y tipografía. Tokens extraídos del diseño:
 - Notificaciones por Telegram, enviadas desde n8n.
 - Login: usuario fijo validado por webhook de n8n (`POST /auth/login`, `POST /auth/recover`); en el mock, credenciales de prueba de `.env`.
 - `simulate` y `simulate_all` son comandos **solo demo**: los atiende el transporte mock (o un modo demo del micro).
+  `simulate_all` desarmado primero arma (sin tiempo de salida, queda en el historial) para mostrar siempre intrusión + humo.
+- Tiempo de salida: al armar, `exit_countdown` (30 s por defecto, `exit_delay_s` 0–120) durante el cual aperturas y
+  movimiento no disparan intervención; la UI lo muestra como «Armando…». **A confirmar con hardware**, igual que
+  armar con una zona abierta (hoy permitido: solo cuenta el flanco a activo).
+- Nombre del producto: **Smart Home** (tópicos `smarthome/...`). El archivo de diseño conserva su nombre `Start Home.html`.
 - La web se conecta al broker con un usuario de permisos limitados (lee `state`/`event`/`online`/`ack`, escribe solo `cmd`).
   Las credenciales en `.env` (`VITE_*`) terminan en el JS público: no son seguridad real.
 - Paso 4 (transporte MQTT + `device-sim`) en espera hasta confirmar el microcontrolador y su conectividad.
@@ -92,9 +97,14 @@ Al terminar cada paso: correr los tests, mostrar el resumen de cambios y esperar
   `mqtt` (MQTT sobre WebSocket) y `http` (webhooks n8n + polling). Se elige por config (`VITE_TRANSPORT`).
 - La máquina de estados en JS (`alarm-machine`) es pura y testeable; la usa el mock y sirve de
   especificación ejecutable para el firmware.
-- Contrato JSON versionado (`v`), sobre común `{v, id, type, ts, deviceId, payload}`. Ver `docs/contrato.md` cuando exista.
+- Contrato JSON versionado (`v`), sobre común `{v, id, type, ts, deviceId, payload}`: `docs/contrato.md`.
+  Implementación en `src/core/contract.js`; comportamiento en `src/core/alarm-machine.js` (pura: `step(state, input)`
+  → `{state, events, ok, error}`). `tests/contract.test.js` valida los ejemplos JSON del documento, así que
+  código, doc y tests se cambian juntos.
 
 ## Reglas de trabajo
 - No escribir código de la app sin plan aprobado por el usuario.
 - Cualquier cambio al contrato JSON se documenta en `docs/contrato.md` y se avisa: lo consumen hardware y n8n.
 - Sin secretos en el repo (credenciales de broker/n8n van en `.env`, con `.env.example` versionado).
+- No instalar nada fuera del proyecto (paquetes npm globales, paquetes de Python, programas, etc.) sin pedir
+  permiso antes. Las dependencias del proyecto van en `package.json`.
