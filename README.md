@@ -6,6 +6,9 @@ Sistema inteligente de automatización y seguridad para el hogar. Monitorea la c
 Proyecto en equipo de la materia **Programación en Tiempo Real**. Este repositorio contiene la **web**:
 el login y el panel desde donde el usuario ve y controla el sistema.
 
+**▶ Demo en vivo: https://cgonzalo12.github.io/SmartHome/** (modo demo, sin hardware; credenciales de prueba
+en [Modo demo](#modo-demo)). Se publica sola con GitHub Actions en cada push a `main`, si pasan los tests.
+
 ## Cómo funciona
 
 El sistema tiene cuatro estados:
@@ -132,6 +135,7 @@ Con el mock (la configuración por defecto) la web funciona sin hardware ni back
 | 1. Base del proyecto y login | ✅ |
 | 2. Máquina de estados y contrato de mensajes | ✅ (borrador, a confirmar con el equipo) |
 | 3. Panel de control con el mock | ✅ |
+| Publicación automática en GitHub Pages | ✅ |
 | 4. Conexión real con el micro (MQTT o HTTP) | ⏸️ en espera hasta confirmar el microcontrolador y su conectividad |
 
 Pendiente de confirmar con hardware: el tiempo de salida y qué pasa al armar con una puerta o ventana abierta
