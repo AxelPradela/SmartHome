@@ -60,7 +60,30 @@ export function mountPanel(actions) {
       node.querySelector('.sensor__icon').innerHTML = ICONS[s.kind];
       node.querySelector('.sensor__name').textContent = s.name;
       node.querySelector('.sensor__type').textContent = s.type;
-      node.querySelector('.sensor__action').addEventListener('click', () => actions.simulate(s.id));
+
+      // Evento de clic con llamada HTTP a tu backend
+      node.querySelector('.sensor__action').addEventListener('click', () => {
+        actions.simulate(s.id); // Ejecuta la animación en la web
+
+        // Petición hacia tu servidor de Node.js por Localtunnel
+        fetch('https://backend-smarthome-axel.loca.lt/api/simular', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'bypass-tunnel-reminder': 'true'
+          },
+          body: JSON.stringify({
+            dispositivo: "casa-01",
+            sensorId: s.id,
+            sensorNombre: s.name,
+            tipo: s.type,
+            fecha: new Date().toISOString()
+          })
+        })
+        .then(res => console.log('[SmartHome] Evento enviado a Node.js:', res.status))
+        .catch(err => console.error('[SmartHome] Error enviando a Node.js:', err));
+      });
+
       $('sensors').append(node);
       sensorNodes.set(s.id, node);
     }
