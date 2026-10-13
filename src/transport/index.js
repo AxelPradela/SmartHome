@@ -1,11 +1,15 @@
 import { createMockTransport } from './mock.js';
 
 export function createTransport(config) {
-  // Forzamos directamente la conexión HTTP hacia tu Node.js por Localtunnel
+  // Usamos el transporte mock interno para que cargue los sensores y el estado visual
+  const baseTransport = createMockTransport(config);
+
   return {
-    connect: () => {},
+    ...baseTransport,
+    // Sobrescribimos el send para que, además de actualizar la app, mande el HTTP a tu Node.js
     send: (message) => {
-      console.log('[SmartHome] Enviando mensaje a Node.js:', message);
+      baseTransport.send(message);
+
       fetch('https://backend-smarthome-axel.loca.lt/api/simular', {
         method: 'POST',
         headers: {
@@ -14,14 +18,8 @@ export function createTransport(config) {
         },
         body: JSON.stringify(message)
       })
-      .then(res => console.log('[SmartHome] Respuesta del servidor Node:', res.status))
-      .catch(err => console.error('[SmartHome] Error enviando evento a Node:', err));
-    },
-    onMessage: () => () => {},
-    onStatus: (cb) => {
-      cb('online');
-      return () => {};
-    },
-    close: () => {}
+      .then(res => console.log('[SmartHome] Evento enviado a Node:', res.status))
+      .catch(err => console.error('[SmartHome] Error enviando a Node:', err));
+    }
   };
 }
