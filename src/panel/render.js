@@ -65,11 +65,11 @@ export function mountPanel(actions) {
       node.querySelector('.sensor__action').addEventListener('click', () => {
         actions.simulate(s.id);
 
-        fetch('https://hastily-travel-sanded.ngrok-free.dev', {
+        fetch('https://hastily-travel-sanded.ngrok-free.dev/api/simular', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'bypass-tunnel-reminder': 'true'
+            'ngrok-skip-browser-warning': 'true'
           },
           body: JSON.stringify({
             dispositivo: "casa-01",
@@ -86,7 +86,7 @@ export function mountPanel(actions) {
       $('sensors').append(node);
       sensorNodes.set(s.id, node);
     }
-  }
+}
 
   function ensureModes(modes) {
     if (modeNodes.size) return;
