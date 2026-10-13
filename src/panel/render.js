@@ -65,7 +65,7 @@ export function mountPanel(actions) {
       node.querySelector('.sensor__action').addEventListener('click', () => {
         actions.simulate(s.id);
 
-        fetch('https://backend-smarthome-axel.loca.lt/api/simular', {
+        fetch('https://hastily-travel-sanded.ngrok-free.dev', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
