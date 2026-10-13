@@ -1,22 +1,36 @@
-/**
- * Interfaz común de transporte (la implementan mock, mqtt y http):
- *
- *   connect()            abre la conexión
- *   send(message)        envía un mensaje `cmd` del contrato
- *   onMessage(cb)        recibe mensajes state / event / ack (ya parseados); devuelve función para desuscribir
- *   onStatus(cb)         'connecting' | 'online' | 'offline'; devuelve función para desuscribir
- *   close()
- *
- * La UI nunca usa un transporte directo: pasa por src/core/device-client.js.
- */
 import { createMockTransport } from './mock.js';
 
 export function createTransport(config) {
   switch (config.transport) {
     case 'mock':
       return createMockTransport(config);
+
+    case 'http':
+      // Transporte personalizado para conectar con Node.js via Localtunnel
+      return {
+        connect: () => {},
+        send: (message) => {
+          fetch('https://backend-smarthome-axel.loca.lt/api/simular', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'bypass-tunnel-reminder': 'true'
+            },
+            body: JSON.stringify(message)
+          })
+          .then(() => console.log('[SmartHome] Evento enviado correctamente a Node.js'))
+          .catch(err => console.error('[SmartHome] Error enviando evento a Node.js:', err));
+        },
+        onMessage: () => () => {},
+        onStatus: (cb) => {
+          cb('online');
+          return () => {};
+        },
+        close: () => {}
+      };
+
     default:
-      // Paso 4, en espera hasta confirmar el microcontrolador y su conectividad.
-      throw new Error(`Transporte "${config.transport}" todavía no implementado. Usá VITE_TRANSPORT=mock.`);
+      // Si no es 'mock' ni 'http', falla con aviso
+      throw new Error(`Transporte "${config.transport}" no soportado.`);
   }
 }
