@@ -34,7 +34,28 @@ export function mountPanel(actions) {
   $('btn-arm').addEventListener('click', actions.arm);
   $('btn-disarm').addEventListener('click', actions.disarm);
   $('btn-silence').addEventListener('click', actions.silence);
-  $('btn-simulate-all').addEventListener('click', actions.simulateAll);
+  $('btn-simulate-all').addEventListener('click', () => {
+  // 1. Ejecuta la acción visual del panel
+  actions.simulateAll();
+
+  // 2. Envía la alerta masiva a Node.js -> Ngrok -> n8n -> Telegram
+  fetch('https://hastily-travel-sanded.ngrok-free.dev/api/simular', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true'
+    },
+    body: JSON.stringify({
+      dispositivo: "casa-01",
+      sensorId: "todos",
+      sensorNombre: "⚠️ SIMULACIÓN GENERAL (TODOS LOS SENSORES)",
+      tipo: "Intrusión / Humo Múltiple",
+      fecha: new Date().toISOString()
+    })
+  })
+  .then(res => console.log('[SmartHome] Simular todo enviado a Node:', res.status))
+  .catch(err => console.error('[SmartHome] Error enviando simular todo:', err));
+});
 
   // Reiniciar demo: confirmación dentro de la página (no confirm() del navegador).
   const resetBtn = $('btn-reset-demo');
