@@ -76,21 +76,24 @@ export function mountPanel(actions) {
   function ensureSensors(sensors) {
     if (sensorNodes.size) return;
     const tpl = $('tpl-sensor');
+    
+    // Conjunto para llevar el rastreo de qué sensores están activos actualmente
+    const sensoresDisparados = new Set();
+
     for (const s of sensors) {
       const node = tpl.content.firstElementChild.cloneNode(true);
       node.querySelector('.sensor__icon').innerHTML = ICONS[s.kind];
       node.querySelector('.sensor__name').textContent = s.name;
       node.querySelector('.sensor__type').textContent = s.type;
 
-      // Al hacer clic: simula localmente y evalúa si corresponde enviar la alerta a Node.js
+      // Al hacer clic: conmuta el estado de alerta
       node.querySelector('.sensor__action').addEventListener('click', () => {
         actions.simulate(s.id);
 
-        // Verificamos si tras simular el sensor pasó a estar en estado activo/disparado.
-        // Se valida según el modelo de datos (s.active / s.triggered) o la clase CSS agregada al elemento.
-        const estaActivo = Boolean(s.active || s.triggered || node.classList.contains('is-active') || node.classList.contains('sensor--active'));
+        // Si el sensor no estaba disparado, lo activamos y mandamos la alerta
+        if (!sensoresDisparados.has(s.id)) {
+          sensoresDisparados.add(s.id);
 
-        if (estaActivo) {
           fetch('https://hastily-travel-sanded.ngrok-free.dev/api/simular', {
             method: 'POST',
             headers: {
@@ -105,10 +108,13 @@ export function mountPanel(actions) {
               fecha: new Date().toISOString()
             })
           })
-          .then(res => console.log('[SmartHome] Evento de alerta enviado a Node:', res.status))
-          .catch(err => console.error('[SmartHome] Error al enviar a Node:', err));
+          .then(res => console.log('[SmartHome] Alerta enviada a Node:', res.status))
+          .catch(err => console.error('[SmartHome] Error enviando alerta:', err));
+
         } else {
-          console.log('[SmartHome] Sensor normalizado/desactivado: no se envía notificación.');
+          // Si ya estaba disparado, al hacer clic lo normalizamos y borramos del Set
+          sensoresDisparados.delete(s.id);
+          console.log('[SmartHome] Sensor normalizado:', s.name);
         }
       });
 
