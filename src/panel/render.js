@@ -82,26 +82,34 @@ export function mountPanel(actions) {
       node.querySelector('.sensor__name').textContent = s.name;
       node.querySelector('.sensor__type').textContent = s.type;
 
-      // Al hacer clic: simula localmente y dispara el fetch a tu Node.js
+      // Al hacer clic: simula localmente y evalúa si corresponde enviar la alerta a Node.js
       node.querySelector('.sensor__action').addEventListener('click', () => {
         actions.simulate(s.id);
 
-        fetch('https://hastily-travel-sanded.ngrok-free.dev/api/simular', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'ngrok-skip-browser-warning': 'true'
-          },
-          body: JSON.stringify({
-            dispositivo: "casa-01",
-            sensorId: s.id,
-            sensorNombre: s.name,
-            tipo: s.type,
-            fecha: new Date().toISOString()
+        // Verificamos si tras simular el sensor pasó a estar en estado activo/disparado.
+        // Se valida según el modelo de datos (s.active / s.triggered) o la clase CSS agregada al elemento.
+        const estaActivo = Boolean(s.active || s.triggered || node.classList.contains('is-active') || node.classList.contains('sensor--active'));
+
+        if (estaActivo) {
+          fetch('https://hastily-travel-sanded.ngrok-free.dev/api/simular', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'ngrok-skip-browser-warning': 'true'
+            },
+            body: JSON.stringify({
+              dispositivo: "casa-01",
+              sensorId: s.id,
+              sensorNombre: s.name,
+              tipo: s.type,
+              fecha: new Date().toISOString()
+            })
           })
-        })
-        .then(res => console.log('Enviado a Node:', res.status))
-        .catch(err => console.error('Error al enviar a Node:', err));
+          .then(res => console.log('[SmartHome] Evento de alerta enviado a Node:', res.status))
+          .catch(err => console.error('[SmartHome] Error al enviar a Node:', err));
+        } else {
+          console.log('[SmartHome] Sensor normalizado/desactivado: no se envía notificación.');
+        }
       });
 
       $('sensors').append(node);
